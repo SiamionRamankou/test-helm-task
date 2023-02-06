@@ -1,0 +1,66 @@
+{{- if .Values.nginx.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  {{- if .Values.nginx.replicas }}
+  replicas: {{ .Values.nginx.replicas }} 
+  {{- end }}
+  {{- if .Values.nginx.strategy }}
+  strategy: {{ toYaml .Values.nginx.strategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: nginx
+  template:
+    metadata:
+    {{- if .Values.nginx.podAnnotations }}
+      annotations: {{ toYaml .Values.nginx.podAnnotations | nindent 8 }}
+    {{- end }}
+      labels:
+        name: nginx
+    spec:
+      {{- if .Values.nginx.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nginx.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nginx.affinity }}
+      affinity: {{ toYaml .Values.nginx.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nginx.tolerations }}
+      tolerations: {{ toYaml .Values.nginx.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nginx.securityContext }}
+      securityContext: {{ toYaml .Values.nginx.securityContext | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: nginx
+        image: {{ .Values.nginx.image }}
+        ports:
+        - containerPort: {{ .Values.nginx.service.port }}
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: configs
+        {{- if .Values.nginx.startupProbe }}
+        startupProbe: {{ toYaml .Values.nginx.startupProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.nginx.readinessProbe }}
+        readinessProbe: {{ toYaml .Values.nginx.readinessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.nginx.livenessProbe }}
+        livenessProbe: {{ toYaml .Values.nginx.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.nginx.resources }}
+        resources: {{ toYaml .Values.nginx.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.app.mountPath }}
+      volumes:
+      {{- with (index .Values.app.storages 0) }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .name }}
+      {{- end }}
+{{- end }}

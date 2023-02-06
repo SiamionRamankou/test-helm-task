@@ -1,0 +1,171 @@
+# Source: myChart/templates/configs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configs
+data:
+  FOO: "BAR"
+  FOO1: "BAR1"
+---
+# Source: myChart/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vol-name-1
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: "test-class"
+---
+# Source: myChart/templates/deploy-app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  selector:
+    matchLabels:
+      name: app
+  template:
+    metadata:
+      labels:
+        name: app
+    spec:
+      containers:
+      - name: app
+        image: busybox:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: configs
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/app/storage/test
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: vol-name-1
+---
+# Source: myChart/templates/deploy-nginx.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      name: nginx
+  template:
+    metadata:
+      labels:
+        name: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: configs
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/app/storage/test
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: vol-name-1
+---
+# Source: myChart/templates/cronjobs.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron1
+spec:
+  schedule: "0 */2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: cron1
+            imagePullPolicy: Always
+            image: busybox:1.0
+            command: [/bin/sh -c echo "RUN"]
+            envFrom:
+            - configMapRef:
+                name: configs
+            resources:
+              limits:
+                cpu: 100m
+                memory: 100Mi
+              requests:
+                cpu: 50m
+                memory: 50Mi
+            volumeMounts:
+            - name: data
+              mountPath: /var/www/app/storage/test
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: vol-name-1
+---
+# Source: myChart/templates/cronjobs.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron2
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: cron2
+            imagePullPolicy: Always
+            image: busybox:1.0
+            command: [/bin/sh -c echo "RUN"]
+            envFrom:
+            - configMapRef:
+                name: configs
+            resources:
+              limits:
+                cpu: 100m
+                memory: 100Mi
+              requests:
+                cpu: 50m
+                memory: 50Mi
+            volumeMounts:
+            - name: data
+              mountPath: /var/www/app/storage/test
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: vol-name-1

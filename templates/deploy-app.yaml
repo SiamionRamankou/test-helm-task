@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  {{- if .Values.app.replicas }}
+  replicas: {{ .Values.app.replicas }} 
+  {{- end }}
+  {{- if .Values.app.strategy }}
+  strategy: {{ toYaml .Values.app.strategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      name: app
+  template:
+    metadata:
+    {{- if .Values.app.podAnnotations }}
+      annotations: {{ toYaml .Values.app.podAnnotations | nindent 8 }}
+    {{- end }}
+      labels:
+        name: app
+    spec:
+      {{- if .Values.app.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.app.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.app.affinity }}
+      affinity: {{ toYaml .Values.app.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.app.tolerations }}
+      tolerations: {{ toYaml .Values.app.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.app.securityContext }}
+      securityContext: {{ toYaml .Values.app.securityContext | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: app
+        image: {{ .Values.app.image }}
+        ports:
+        - containerPort: {{ .Values.app.service.port }}
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: configs
+        {{- if .Values.app.startupProbe }}
+        startupProbe: {{ toYaml .Values.app.startupProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.app.readinessProbe }}
+        readinessProbe: {{ toYaml .Values.app.readinessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.app.livenessProbe }}
+        livenessProbe: {{ toYaml .Values.app.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.app.resources }}
+        resources: {{ toYaml .Values.app.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.app.mountPath }}
+      volumes:
+      {{- with (index .Values.app.storages 0) }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .name }}
+      {{- end }}

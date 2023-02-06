@@ -1,0 +1,72 @@
+app:
+  image: "busybox:latest"
+  service:
+    type: ClusterIP
+    port: 8080
+  storages:
+    - name: vol-name-1
+  mountPath: /var/www/app/storage/test
+  resources:
+    limits:
+      cpu: 100m
+      memory: 100Mi
+    requests:
+      cpu: 50m
+      memory: 50Mi
+
+nginx:
+  enabled: true
+  image: "nginx:latest"
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    limits:
+      cpu: 100m
+      memory: 100Mi
+    requests:
+      cpu: 50m
+      memory: 50Mi
+
+cronjobs:
+  - name: cron1
+    image: "busybox:latest"
+    command: ['/bin/sh', '-c', 'echo "RUN"']
+    schedule: "0 */2 * * *"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+
+  - name: cron2
+    image: "busybox:latest"
+    command: ['/bin/sh', '-c', 'echo "RUN"']
+    schedule: "0 * * * *"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+
+storages:
+  - name: vol-name-1
+    size: 2Gi
+    storageClassName: test-class
+    accessModes: ReadWriteMany
+
+ciEnvs:
+  FOO: BAR
+  FOO1: BAR1
+
+#Есть файл values.yaml содержащий ряд значений. На основании этого файла составить Helm chart, который должен соответствовать требованиям:
+#1. Деплоймент приложения
+#2. Деплоймент nginx, по необходимости
+#3. Запуск CronJobs при наличии
+#4. Создание PVC на основани storages[] и подключение к сущностям деплоймента/cronJobs на основании app.storages
+#5. Подключение переменных окружения из ciEnvs к сущностям деплоймента/cronJobs
+#6. Каждый деплоймент и cronJobs должны иметь возможность управления значениями из файла values если они указаны (replicas, strategy, securityContext, probes, resources, nodeSelector, tolerations, affinity, podAnnotations)
